@@ -4,71 +4,62 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Romantic Yes/No</title>
+
   <style>
     :root{
       --pink-1:#ffd6e8;
       --pink-2:#ff9ec7;
-      --rose:#ff4d8d;
+      --rose:#ff2f7f;
       --wine:#7a1f3d;
-      --cream:#fff7fb;
       --shadow: 0 14px 40px rgba(122,31,61,.22);
     }
 
-    *{box-sizing:border-box}
-    html,body{height:100%}
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+
     body{
       margin:0;
       font-family: ui-rounded, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
       color: var(--wine);
-      overflow:hidden; /* helps when the "No" button escapes */
+      overflow:hidden;
       background:
         radial-gradient(1200px 800px at 20% 20%, rgba(255,255,255,.75), rgba(255,255,255,0) 50%),
         radial-gradient(1000px 700px at 80% 30%, rgba(255,255,255,.55), rgba(255,255,255,0) 55%),
         linear-gradient(135deg, var(--pink-1), var(--pink-2));
     }
 
-    /* Floating hearts (romantic background) */
-    .hearts{
-      position:fixed; inset:0;
-      pointer-events:none;
-      opacity:.55;
-      filter: blur(.2px);
-    }
+    /* floating hearts */
+    .hearts{ position:fixed; inset:0; pointer-events:none; opacity:.55; }
     .heart{
       position:absolute;
-      width:18px; height:18px;
+      width:18px;height:18px;
       transform: rotate(45deg);
       background: rgba(255,77,141,.35);
+      border-radius:4px;
       animation: floatUp linear infinite;
-      border-radius: 4px;
     }
     .heart::before, .heart::after{
-      content:"";
-      position:absolute;
-      width:18px; height:18px;
-      background: inherit;
-      border-radius:50%;
+      content:""; position:absolute; width:18px;height:18px; background:inherit; border-radius:50%;
     }
     .heart::before{ left:-9px; top:0; }
     .heart::after { left:0; top:-9px; }
 
     @keyframes floatUp{
       from{ transform: translateY(12vh) rotate(45deg); opacity:0; }
-      15%{opacity:.65}
+      15%{ opacity:.65; }
       to{ transform: translateY(-120vh) rotate(45deg); opacity:0; }
     }
 
-    /* Layout cards */
     .screen{
-      position:relative;
       height:100%;
       display:grid;
       place-items:center;
       padding:24px;
+      position:relative;
     }
 
     .card{
-      width:min(680px, 94vw);
+      width:min(720px, 94vw);
       background: rgba(255,255,255,.70);
       border: 1px solid rgba(255,255,255,.55);
       backdrop-filter: blur(10px);
@@ -78,65 +69,87 @@
       text-align:center;
     }
 
-    h1{
-      margin: 0 0 12px;
-      font-size: clamp(24px, 3.6vw, 40px);
-      letter-spacing: .2px;
-    }
-    p{
-      margin: 0 0 18px;
-      font-size: clamp(14px, 2.1vw, 16px);
-      opacity:.9;
+    h1{ margin:0 0 10px; font-size: clamp(24px, 3.6vw, 40px); }
+    p{ margin:0 0 14px; font-size: clamp(14px, 2.1vw, 16px); opacity:.9; }
+
+    /* SAFE ZONE (center area) */
+    #safeZone{
+      width: min(560px, 92vw);
+      /* use svh when supported; fallback to vh */
+      height: min(320px, 52vh);
+      height: min(320px, 52svh);
+      margin: 12px auto 0;
+      position: relative;
+      border-radius: 22px;
+      background: rgba(255,255,255,.18);
+      border: 1px dashed rgba(122,31,61,.20);
+      overflow: hidden; /* HARD GUARANTEE: nothing can go outside */
     }
 
+    /* keep row at top inside safe zone */
     .btn-row{
-      position:relative;
+      position:absolute;
+      top: 14px;
+      left: 0;
+      right: 0;
       display:flex;
       gap:14px;
       justify-content:center;
       align-items:center;
-      margin-top: 10px;
-      min-height: 64px;
+      z-index: 2;
+      pointer-events: auto;
     }
 
-    button{
+    .choiceBtn{
+      width: 160px;
+      height: 46px;
       border:0;
-      padding: 12px 18px;
       border-radius: 999px;
-      font-weight: 700;
+      font-weight: 800;
       font-size: 16px;
       cursor:pointer;
-      box-shadow: 0 10px 22px rgba(122,31,61,.18);
-      transition: transform .12s ease, filter .12s ease;
       user-select:none;
       -webkit-tap-highlight-color: transparent;
+      box-shadow: 0 10px 22px rgba(122,31,61,.18);
+      transition: transform .12s ease, filter .12s ease;
     }
-    button:active{ transform: scale(.98); }
+    .choiceBtn:active{ transform: scale(.98); }
+    .choiceBtn:focus-visible{
+      outline: 3px solid rgba(255,77,141,.55);
+      outline-offset: 3px;
+    }
 
     #yesBtn{
-      background: linear-gradient(180deg, #ff5ea1, #ff2f7f);
-      color:white;
+      background: linear-gradient(180deg, #ff5ea1, var(--rose));
+      color:#fff;
     }
     #yesBtn:hover{ filter: brightness(1.05); }
 
-    /* "No" button escapes: we position it as fixed so it can roam the screen */
+    /* No button becomes ABSOLUTE inside safeZone after first hover (still clipped by safeZone) */
     #noBtn{
-      background: rgba(255,255,255,.9);
+      background: rgba(255,255,255,.92);
       color: var(--wine);
       border: 1px solid rgba(122,31,61,.18);
-      position: fixed; /* moved by JS */
-      left: 50%;
-      top: 60%;
-      transform: translate(-50%, -50%);
     }
-    #noBtn:hover{ filter: brightness(1.02); }
 
-    /* Result view */
-    #resultScreen{ display:none; }
-    .resultText{
-      font-size: clamp(22px, 3.2vw, 34px);
-      margin: 0 0 14px;
+    /* placeholder keeps spacing in row after no detaches */
+    #noPlaceholder{
+      width: 160px;
+      height: 46px;
+      display:none;
     }
+
+    /* detached movement animation */
+    #noBtn.detached{
+      position:absolute;
+      z-index: 3;
+      transition: left .35s ease, top .35s ease, filter .12s ease, transform .12s ease;
+      will-change: left, top;
+    }
+
+    /* Result screen */
+    #resultScreen{ display:none; }
+    .resultText{ font-size: clamp(22px, 3.2vw, 34px); margin: 0 0 14px; }
     .imageWrap{
       width: min(520px, 88vw);
       aspect-ratio: 16/10;
@@ -147,68 +160,52 @@
       background: rgba(255,255,255,.65);
       display:grid;
       place-items:center;
+      margin: 0 auto;
     }
-    .imageWrap img{
-      width:100%; height:100%;
-      object-fit: cover;
-      display:block;
-    }
+    .imageWrap img{ width:100%; height:100%; object-fit: cover; display:block; }
+    .tiny{ margin-top: 14px; font-size: 13px; opacity:.75; }
 
-    .tiny{
-      margin-top: 16px;
-      font-size: 13px;
-      opacity: .75;
-    }
-
-    /* Confetti canvas overlay */
+    /* Confetti */
     #confetti{
       position: fixed;
       inset: 0;
       pointer-events:none;
       z-index: 50;
     }
-
-    /* Accessibility: keep focus visible */
-    button:focus-visible{
-      outline: 3px solid rgba(255,77,141,.55);
-      outline-offset: 3px;
-    }
   </style>
 </head>
+
 <body>
   <canvas id="confetti"></canvas>
-
-  <!-- Romantic floating hearts -->
   <div class="hearts" aria-hidden="true" id="hearts"></div>
 
   <!-- Screen 1 -->
   <main class="screen" id="askScreen">
     <div class="card">
-      <!-- 1) Romantic yes/no question -->
-      <h1 id="question">Will you be my Valentine? 💘</h1>
-      <p id="subtitle">Be honest… my heart is listening.</p>
+      <h1>O zarif, güzel tırnaklar hep benim olacak mı? 💘</h1>
+      <p>Be honest… my heart is listening.</p>
 
-      <!-- 2) Two buttons -->
-      <div class="btn-row">
-        <button id="yesBtn" type="button">Yes 💖</button>
-        <button id="noBtn" type="button">No 🙈</button>
+      <!-- SAFE ZONE -->
+      <div id="safeZone">
+        <div class="btn-row" id="btnRow">
+          <button id="yesBtn" class="choiceBtn" type="button">Evet 💖</button>
+          <button id="noBtn"  class="choiceBtn" type="button">Hayır 🙈</button>
+          <span id="noPlaceholder" aria-hidden="true"></span>
+        </div>
       </div>
 
-      <div class="tiny">Tip: try to click “No” 😄</div>
+      <div class="tiny">Hayır demeyi bir dene bakalım 😄</div>
     </div>
   </main>
 
-  <!-- Screen 2 (new page feel) -->
+  <!-- Screen 2 -->
   <main class="screen" id="resultScreen">
     <div class="card">
-      <!-- 4) Text on top of the image -->
       <h2 class="resultText" id="resultText">Yaaay! You made my day 💞</h2>
       <div class="imageWrap">
-        <!-- Replace with your own image URL -->
         <img id="resultImage" alt="Romantic image"
-             src="https://images.unsplash.com/photo-1520975958225-11f8eea2f59a?auto=format&fit=crop&w=1200&q=80">
+             src="images/yes.jpg">
       </div>
-
       <div class="tiny">Refresh the page to replay.</div>
     </div>
   </main>
@@ -223,10 +220,10 @@
       for(let i=0;i<count;i++){
         const h = document.createElement("div");
         h.className = "heart";
-        const left = Math.random()*100;            // vw
-        const size = 10 + Math.random()*18;        // px
-        const dur  = 7 + Math.random()*10;         // s
-        const delay= -Math.random()*dur;           // negative = already in motion
+        const left = Math.random()*100;
+        const size = 10 + Math.random()*18;
+        const dur  = 7 + Math.random()*10;
+        const delay= -Math.random()*dur;
         h.style.left = left + "vw";
         h.style.bottom = (-20 - Math.random()*50) + "vh";
         h.style.width = size + "px";
@@ -239,51 +236,127 @@
     })();
 
     /**********************
-     * Escaping "No" button
+     * Safe-zone constrained "No" button
+     * Fixes:
+     * - No cannot leave safe zone because safeZone has overflow:hidden
+     * - No cannot disappear because we clamp inside safeZone bounds
      **********************/
-    const noBtn  = document.getElementById("noBtn");
+    const safeZone = document.getElementById("safeZone");
+    const btnRow = document.getElementById("btnRow");
     const yesBtn = document.getElementById("yesBtn");
+    const noBtn  = document.getElementById("noBtn");
+    const noPlaceholder = document.getElementById("noPlaceholder");
 
-    function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
+    let detached = false;
+    let cooldown = false;
 
-    function moveNoButton(){
-      const pad = 14; // keep away from edges
-      const rect = noBtn.getBoundingClientRect();
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
+    function rand(min,max){ return min + Math.random()*(max-min); }
+    function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
 
-      // Try a few random spots to avoid overlapping the YES button area too much
-      const yesRect = yesBtn.getBoundingClientRect();
-      let x, y, tries = 0;
+    function detachNoIfNeeded(){
+      if (detached) return;
 
-      do {
-        x = pad + Math.random() * (vw - rect.width  - pad*2);
-        y = pad + Math.random() * (vh - rect.height - pad*2);
-        tries++;
-        // avoid landing right on top of the YES button region
-      } while (tries < 20 && (
-        x < yesRect.right + 20 &&
-        x + rect.width > yesRect.left - 20 &&
-        y < yesRect.bottom + 20 &&
-        y + rect.height > yesRect.top - 20
-      ));
+      // Keep spacing in the row
+      noPlaceholder.style.display = "inline-block";
 
-      noBtn.style.left = clamp(x, pad, vw - rect.width - pad) + "px";
-      noBtn.style.top  = clamp(y, pad, vh - rect.height - pad) + "px";
-      noBtn.style.transform = "translate(0,0)";
+      // Compute NO position relative to safeZone
+      const z = safeZone.getBoundingClientRect();
+      const r = noBtn.getBoundingClientRect();
+
+      // Move NO into safeZone as absolute element
+      safeZone.appendChild(noBtn);
+      noBtn.classList.add("detached");
+
+      // Set exact current position inside safeZone (so it doesn't jump)
+      const left = r.left - z.left;
+      const top  = r.top  - z.top;
+
+      noBtn.style.left = left + "px";
+      noBtn.style.top  = top  + "px";
+
+      detached = true;
+      keepNoInside(); // clamp once immediately
     }
 
-    // 3) Escape on hover (and on touch start for mobile)
-    noBtn.addEventListener("mouseenter", moveNoButton);
-    noBtn.addEventListener("pointerenter", moveNoButton);
-    noBtn.addEventListener("touchstart", (e) => { e.preventDefault(); moveNoButton(); }, {passive:false});
+    function bounds(){
+      const pad = 12;
+      const zW = safeZone.clientWidth;
+      const zH = safeZone.clientHeight;
+      const bW = noBtn.offsetWidth;
+      const bH = noBtn.offsetHeight;
 
-    // Initialize "No" somewhere near the card bottom-right
-    window.addEventListener("load", () => moveNoButton());
-    window.addEventListener("resize", () => moveNoButton());
+      const minX = pad;
+      const maxX = Math.max(minX, zW - bW - pad);
+      const minY = pad;
+      const maxY = Math.max(minY, zH - bH - pad);
+
+      return {minX,maxX,minY,maxY,bW,bH};
+    }
+
+    function keepNoInside(){
+      if (!detached) return;
+      const {minX,maxX,minY,maxY} = bounds();
+
+      const curL = parseFloat(noBtn.style.left || minX);
+      const curT = parseFloat(noBtn.style.top  || minY);
+
+      noBtn.style.left = clamp(curL, minX, maxX) + "px";
+      noBtn.style.top  = clamp(curT, minY, maxY) + "px";
+    }
+
+    function moveNo(){
+      if (cooldown) return;
+      cooldown = true;
+      setTimeout(() => cooldown = false, 120);
+
+      detachNoIfNeeded();
+
+      const {minX,maxX,minY,maxY,bW,bH} = bounds();
+
+      // Avoid landing on the YES button (which is still in the row near the top)
+      const yesRect = yesBtn.getBoundingClientRect();
+      const zoneRect = safeZone.getBoundingClientRect();
+
+      // Convert YES rect to safeZone coordinates
+      const yesX1 = yesRect.left - zoneRect.left;
+      const yesY1 = yesRect.top  - zoneRect.top;
+      const yesX2 = yesRect.right - zoneRect.left;
+      const yesY2 = yesRect.bottom - zoneRect.top;
+
+      let x, y, tries = 0;
+      do {
+        x = rand(minX, maxX);
+        y = rand(minY, maxY);
+        tries++;
+      } while (tries < 50 && (
+        x < yesX2 + 14 &&
+        x + bW > yesX1 - 14 &&
+        y < yesY2 + 14 &&
+        y + bH > yesY1 - 14
+      ));
+
+      noBtn.style.left = clamp(x, minX, maxX) + "px";
+      noBtn.style.top  = clamp(y, minY, maxY) + "px";
+
+      // Clamp again after the transition finishes (extra safety)
+      requestAnimationFrame(keepNoInside);
+      setTimeout(keepNoInside, 420);
+    }
+
+    // Desktop: move on hover
+    noBtn.addEventListener("pointerenter", (e) => {
+      if (e.pointerType === "mouse") moveNo();
+    });
+
+    // Touch devices: keep it clickable (DON'T auto-move on touch)
+    // If you want it to escape on touch too, change this to call moveNo() and preventDefault.
+    // noBtn.addEventListener("touchstart", (e) => { e.preventDefault(); moveNo(); }, {passive:false});
+
+    // Keep clamped if layout changes
+    window.addEventListener("resize", keepNoInside);
 
     /**********************
-     * "New page" view switch
+     * Screen switching
      **********************/
     const askScreen = document.getElementById("askScreen");
     const resultScreen = document.getElementById("resultScreen");
@@ -293,13 +366,12 @@
     function showResult({text, imageUrl}){
       if (text) resultText.textContent = text;
       if (imageUrl) resultImage.src = imageUrl;
-
       askScreen.style.display = "none";
       resultScreen.style.display = "grid";
     }
 
     /**********************
-     * Confetti animation (no libraries)
+     * Confetti
      **********************/
     const canvas = document.getElementById("confetti");
     const ctx = canvas.getContext("2d");
@@ -318,25 +390,22 @@
     let confettiEndAt = 0;
     let particles = [];
 
-    function rand(min,max){ return min + Math.random()*(max-min); }
-
     function startConfetti(durationMs = 3500){
       const now = performance.now();
       confettiEndAt = now + durationMs;
       particles = [];
 
-      const n = Math.floor(180 + Math.random()*80);
+      const n = 220;
       for(let i=0;i<n;i++){
         particles.push({
-          x: rand(0, window.innerWidth),
-          y: rand(-40, window.innerHeight * 0.2),
-          vx: rand(-2.3, 2.3),
-          vy: rand(2.2, 5.5),
-          r: rand(2, 5),
-          rot: rand(0, Math.PI*2),
-          vr: rand(-0.18, 0.18),
-          // romantic palette: pink/rose/wine/white/gold-ish
-          c: ["#ff2f7f","#ff5ea1","#7a1f3d","#ffffff","#ffd1e6","#ffb3d1"][Math.floor(rand(0,6))]
+          x: Math.random() * window.innerWidth,
+          y: -20 - Math.random()*60,
+          vx: -2.3 + Math.random()*4.6,
+          vy:  2.2 + Math.random()*3.2,
+          r:   2 + Math.random()*3,
+          rot: Math.random()*Math.PI*2,
+          vr:  -0.18 + Math.random()*0.36,
+          c: ["#ff2f7f","#ff5ea1","#7a1f3d","#ffffff","#ffd1e6","#ffb3d1"][Math.floor(Math.random()*6)]
         });
       }
 
@@ -346,15 +415,13 @@
     function tickConfetti(t){
       ctx.clearRect(0,0,window.innerWidth, window.innerHeight);
 
-      // simple gravity + drift
       for(const p of particles){
         p.x += p.vx;
         p.y += p.vy;
-        p.vy += 0.03;       // gravity
-        p.vx *= 0.995;      // air
+        p.vy += 0.03;
+        p.vx *= 0.995;
         p.rot += p.vr;
 
-        // wrap sideways
         if (p.x < -20) p.x = window.innerWidth + 20;
         if (p.x > window.innerWidth + 20) p.x = -20;
 
@@ -362,15 +429,13 @@
         ctx.translate(p.x, p.y);
         ctx.rotate(p.rot);
         ctx.fillStyle = p.c;
-        // draw small rectangle confetti
         ctx.fillRect(-p.r*1.2, -p.r*0.6, p.r*2.4, p.r*1.2);
         ctx.restore();
       }
 
-      // remove particles that fell out
-      particles = particles.filter(p => p.y < window.innerHeight + 40);
+      particles = particles.filter(p => p.y < window.innerHeight + 60);
 
-      if (t < confettiEndAt && particles.length > 0){
+      if (t < confettiEndAt && particles.length){
         confettiRAF = requestAnimationFrame(tickConfetti);
       } else {
         ctx.clearRect(0,0,window.innerWidth, window.innerHeight);
@@ -382,20 +447,18 @@
     /**********************
      * Button actions
      **********************/
-    // 4 + 5) Click YES: show new page + confetti
     yesBtn.addEventListener("click", () => {
       showResult({
         text: "Yaaay! You made my day 💞",
-        imageUrl: "https://images.unsplash.com/photo-1520975958225-11f8eea2f59a?auto=format&fit=crop&w=1200&q=80"
+        imageUrl: "images/yes.jpg"
       });
       startConfetti(4200);
     });
 
-    // 4) Click NO: show new page with different message/image (no confetti)
     noBtn.addEventListener("click", () => {
       showResult({
         text: "Aww… okay. Still sending you love 💗",
-        imageUrl: "https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=1200&q=80"
+        imageUrl: "images/no.jpg"
       });
     });
   </script>
