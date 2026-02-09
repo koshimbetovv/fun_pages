@@ -72,6 +72,8 @@
     h1{ margin:0 0 10px; font-size: clamp(24px, 3.6vw, 40px); }
     p{ margin:0 0 14px; font-size: clamp(14px, 2.1vw, 16px); opacity:.9; }
 
+
+
     /* SAFE ZONE (center area) */
     #safeZone{
       width: min(560px, 92vw);
@@ -178,6 +180,7 @@
 <body>
   <canvas id="confetti"></canvas>
   <div class="hearts" aria-hidden="true" id="hearts"></div>
+  
 
   <!-- Screen 1 -->
   <main class="screen" id="askScreen">
@@ -209,6 +212,8 @@
       <div class="tiny">Refresh the page to replay.</div>
     </div>
   </main>
+  
+  <audio id="bgMusic" src="./music.mp4" preload="auto" loop></audio>
 
   <script>
     /**********************
@@ -448,6 +453,8 @@
      * Button actions
      **********************/
     yesBtn.addEventListener("click", () => {
+      document.getElementById("bgMusic").play().catch(()=>{});
+
       showResult({
         text: "Oleey harikaa! Yolmadan, iyi bakınız tırnaklarınıza!!! 💞",
         imageUrl: "images/yes.png"
