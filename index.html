@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Romantic Yes/No</title>
+  <style>
+    :root{
+      --pink-1:#ffd6e8;
+      --pink-2:#ff9ec7;
+      --rose:#ff4d8d;
+      --wine:#7a1f3d;
+      --cream:#fff7fb;
+      --shadow: 0 14px 40px rgba(122,31,61,.22);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-rounded, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      color: var(--wine);
+      overflow:hidden; /* helps when the "No" button escapes */
+      background:
+        radial-gradient(1200px 800px at 20% 20%, rgba(255,255,255,.75), rgba(255,255,255,0) 50%),
+        radial-gradient(1000px 700px at 80% 30%, rgba(255,255,255,.55), rgba(255,255,255,0) 55%),
+        linear-gradient(135deg, var(--pink-1), var(--pink-2));
+    }
+
+    /* Floating hearts (romantic background) */
+    .hearts{
+      position:fixed; inset:0;
+      pointer-events:none;
+      opacity:.55;
+      filter: blur(.2px);
+    }
+    .heart{
+      position:absolute;
+      width:18px; height:18px;
+      transform: rotate(45deg);
+      background: rgba(255,77,141,.35);
+      animation: floatUp linear infinite;
+      border-radius: 4px;
+    }
+    .heart::before, .heart::after{
+      content:"";
+      position:absolute;
+      width:18px; height:18px;
+      background: inherit;
+      border-radius:50%;
+    }
+    .heart::before{ left:-9px; top:0; }
+    .heart::after { left:0; top:-9px; }
+
+    @keyframes floatUp{
+      from{ transform: translateY(12vh) rotate(45deg); opacity:0; }
+      15%{opacity:.65}
+      to{ transform: translateY(-120vh) rotate(45deg); opacity:0; }
+    }
+
+    /* Layout cards */
+    .screen{
+      position:relative;
+      height:100%;
+      display:grid;
+      place-items:center;
+      padding:24px;
+    }
+
+    .card{
+      width:min(680px, 94vw);
+      background: rgba(255,255,255,.70);
+      border: 1px solid rgba(255,255,255,.55);
+      backdrop-filter: blur(10px);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 28px 22px;
+      text-align:center;
+    }
+
+    h1{
+      margin: 0 0 12px;
+      font-size: clamp(24px, 3.6vw, 40px);
+      letter-spacing: .2px;
+    }
+    p{
+      margin: 0 0 18px;
+      font-size: clamp(14px, 2.1vw, 16px);
+      opacity:.9;
+    }
+
+    .btn-row{
+      position:relative;
+      display:flex;
+      gap:14px;
+      justify-content:center;
+      align-items:center;
+      margin-top: 10px;
+      min-height: 64px;
+    }
+
+    button{
+      border:0;
+      padding: 12px 18px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 16px;
+      cursor:pointer;
+      box-shadow: 0 10px 22px rgba(122,31,61,.18);
+      transition: transform .12s ease, filter .12s ease;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    button:active{ transform: scale(.98); }
+
+    #yesBtn{
+      background: linear-gradient(180deg, #ff5ea1, #ff2f7f);
+      color:white;
+    }
+    #yesBtn:hover{ filter: brightness(1.05); }
+
+    /* "No" button escapes: we position it as fixed so it can roam the screen */
+    #noBtn{
+      background: rgba(255,255,255,.9);
+      color: var(--wine);
+      border: 1px solid rgba(122,31,61,.18);
+      position: fixed; /* moved by JS */
+      left: 50%;
+      top: 60%;
+      transform: translate(-50%, -50%);
+    }
+    #noBtn:hover{ filter: brightness(1.02); }
+
+    /* Result view */
+    #resultScreen{ display:none; }
+    .resultText{
+      font-size: clamp(22px, 3.2vw, 34px);
+      margin: 0 0 14px;
+    }
+    .imageWrap{
+      width: min(520px, 88vw);
+      aspect-ratio: 16/10;
+      border-radius: 22px;
+      overflow:hidden;
+      border: 1px solid rgba(122,31,61,.14);
+      box-shadow: 0 16px 40px rgba(122,31,61,.18);
+      background: rgba(255,255,255,.65);
+      display:grid;
+      place-items:center;
+    }
+    .imageWrap img{
+      width:100%; height:100%;
+      object-fit: cover;
+      display:block;
+    }
+
+    .tiny{
+      margin-top: 16px;
+      font-size: 13px;
+      opacity: .75;
+    }
+
+    /* Confetti canvas overlay */
+    #confetti{
+      position: fixed;
+      inset: 0;
+      pointer-events:none;
+      z-index: 50;
+    }
+
+    /* Accessibility: keep focus visible */
+    button:focus-visible{
+      outline: 3px solid rgba(255,77,141,.55);
+      outline-offset: 3px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="confetti"></canvas>
+
+  <!-- Romantic floating hearts -->
+  <div class="hearts" aria-hidden="true" id="hearts"></div>
+
+  <!-- Screen 1 -->
+  <main class="screen" id="askScreen">
+    <div class="card">
+      <!-- 1) Romantic yes/no question -->
+      <h1 id="question">Will you be my Valentine? 💘</h1>
+      <p id="subtitle">Be honest… my heart is listening.</p>
+
+      <!-- 2) Two buttons -->
+      <div class="btn-row">
+        <button id="yesBtn" type="button">Yes 💖</button>
+        <button id="noBtn" type="button">No 🙈</button>
+      </div>
+
+      <div class="tiny">Tip: try to click “No” 😄</div>
+    </div>
+  </main>
+
+  <!-- Screen 2 (new page feel) -->
+  <main class="screen" id="resultScreen">
+    <div class="card">
+      <!-- 4) Text on top of the image -->
+      <h2 class="resultText" id="resultText">Yaaay! You made my day 💞</h2>
+      <div class="imageWrap">
+        <!-- Replace with your own image URL -->
+        <img id="resultImage" alt="Romantic image"
+             src="https://images.unsplash.com/photo-1520975958225-11f8eea2f59a?auto=format&fit=crop&w=1200&q=80">
+      </div>
+
+      <div class="tiny">Refresh the page to replay.</div>
+    </div>
+  </main>
+
+  <script>
+    /**********************
+     * Hearts background
+     **********************/
+    (function makeHearts(){
+      const wrap = document.getElementById("hearts");
+      const count = 22;
+      for(let i=0;i<count;i++){
+        const h = document.createElement("div");
+        h.className = "heart";
+        const left = Math.random()*100;            // vw
+        const size = 10 + Math.random()*18;        // px
+        const dur  = 7 + Math.random()*10;         // s
+        const delay= -Math.random()*dur;           // negative = already in motion
+        h.style.left = left + "vw";
+        h.style.bottom = (-20 - Math.random()*50) + "vh";
+        h.style.width = size + "px";
+        h.style.height = size + "px";
+        h.style.animationDuration = dur + "s";
+        h.style.animationDelay = delay + "s";
+        h.style.background = `rgba(255,77,141,${0.18 + Math.random()*0.25})`;
+        wrap.appendChild(h);
+      }
+    })();
+
+    /**********************
+     * Escaping "No" button
+     **********************/
+    const noBtn  = document.getElementById("noBtn");
+    const yesBtn = document.getElementById("yesBtn");
+
+    function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
+
+    function moveNoButton(){
+      const pad = 14; // keep away from edges
+      const rect = noBtn.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+
+      // Try a few random spots to avoid overlapping the YES button area too much
+      const yesRect = yesBtn.getBoundingClientRect();
+      let x, y, tries = 0;
+
+      do {
+        x = pad + Math.random() * (vw - rect.width  - pad*2);
+        y = pad + Math.random() * (vh - rect.height - pad*2);
+        tries++;
+        // avoid landing right on top of the YES button region
+      } while (tries < 20 && (
+        x < yesRect.right + 20 &&
+        x + rect.width > yesRect.left - 20 &&
+        y < yesRect.bottom + 20 &&
+        y + rect.height > yesRect.top - 20
+      ));
+
+      noBtn.style.left = clamp(x, pad, vw - rect.width - pad) + "px";
+      noBtn.style.top  = clamp(y, pad, vh - rect.height - pad) + "px";
+      noBtn.style.transform = "translate(0,0)";
+    }
+
+    // 3) Escape on hover (and on touch start for mobile)
+    noBtn.addEventListener("mouseenter", moveNoButton);
+    noBtn.addEventListener("pointerenter", moveNoButton);
+    noBtn.addEventListener("touchstart", (e) => { e.preventDefault(); moveNoButton(); }, {passive:false});
+
+    // Initialize "No" somewhere near the card bottom-right
+    window.addEventListener("load", () => moveNoButton());
+    window.addEventListener("resize", () => moveNoButton());
+
+    /**********************
+     * "New page" view switch
+     **********************/
+    const askScreen = document.getElementById("askScreen");
+    const resultScreen = document.getElementById("resultScreen");
+    const resultText = document.getElementById("resultText");
+    const resultImage = document.getElementById("resultImage");
+
+    function showResult({text, imageUrl}){
+      if (text) resultText.textContent = text;
+      if (imageUrl) resultImage.src = imageUrl;
+
+      askScreen.style.display = "none";
+      resultScreen.style.display = "grid";
+    }
+
+    /**********************
+     * Confetti animation (no libraries)
+     **********************/
+    const canvas = document.getElementById("confetti");
+    const ctx = canvas.getContext("2d");
+
+    function resizeCanvas(){
+      canvas.width = window.innerWidth * devicePixelRatio;
+      canvas.height = window.innerHeight * devicePixelRatio;
+      canvas.style.width = window.innerWidth + "px";
+      canvas.style.height = window.innerHeight + "px";
+      ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+    }
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+
+    let confettiRAF = null;
+    let confettiEndAt = 0;
+    let particles = [];
+
+    function rand(min,max){ return min + Math.random()*(max-min); }
+
+    function startConfetti(durationMs = 3500){
+      const now = performance.now();
+      confettiEndAt = now + durationMs;
+      particles = [];
+
+      const n = Math.floor(180 + Math.random()*80);
+      for(let i=0;i<n;i++){
+        particles.push({
+          x: rand(0, window.innerWidth),
+          y: rand(-40, window.innerHeight * 0.2),
+          vx: rand(-2.3, 2.3),
+          vy: rand(2.2, 5.5),
+          r: rand(2, 5),
+          rot: rand(0, Math.PI*2),
+          vr: rand(-0.18, 0.18),
+          // romantic palette: pink/rose/wine/white/gold-ish
+          c: ["#ff2f7f","#ff5ea1","#7a1f3d","#ffffff","#ffd1e6","#ffb3d1"][Math.floor(rand(0,6))]
+        });
+      }
+
+      if (!confettiRAF) confettiRAF = requestAnimationFrame(tickConfetti);
+    }
+
+    function tickConfetti(t){
+      ctx.clearRect(0,0,window.innerWidth, window.innerHeight);
+
+      // simple gravity + drift
+      for(const p of particles){
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.03;       // gravity
+        p.vx *= 0.995;      // air
+        p.rot += p.vr;
+
+        // wrap sideways
+        if (p.x < -20) p.x = window.innerWidth + 20;
+        if (p.x > window.innerWidth + 20) p.x = -20;
+
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.c;
+        // draw small rectangle confetti
+        ctx.fillRect(-p.r*1.2, -p.r*0.6, p.r*2.4, p.r*1.2);
+        ctx.restore();
+      }
+
+      // remove particles that fell out
+      particles = particles.filter(p => p.y < window.innerHeight + 40);
+
+      if (t < confettiEndAt && particles.length > 0){
+        confettiRAF = requestAnimationFrame(tickConfetti);
+      } else {
+        ctx.clearRect(0,0,window.innerWidth, window.innerHeight);
+        cancelAnimationFrame(confettiRAF);
+        confettiRAF = null;
+      }
+    }
+
+    /**********************
+     * Button actions
+     **********************/
+    // 4 + 5) Click YES: show new page + confetti
+    yesBtn.addEventListener("click", () => {
+      showResult({
+        text: "Yaaay! You made my day 💞",
+        imageUrl: "https://images.unsplash.com/photo-1520975958225-11f8eea2f59a?auto=format&fit=crop&w=1200&q=80"
+      });
+      startConfetti(4200);
+    });
+
+    // 4) Click NO: show new page with different message/image (no confetti)
+    noBtn.addEventListener("click", () => {
+      showResult({
+        text: "Aww… okay. Still sending you love 💗",
+        imageUrl: "https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=1200&q=80"
+      });
+    });
+  </script>
+</body>
+</html>
